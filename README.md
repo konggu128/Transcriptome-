@@ -11,6 +11,10 @@ export PATH=/path/to/sratoolkit/bin:$PATH
 #want to have a loop to download multiple sra files;
 #generate a txt file with all the run-names:
 nano download.txt
+SSR2079326
+SSR2079327
+SSR2079328
+SSR2079329
 
 #then, write sh to download the SRA files:
 nano download.sh
