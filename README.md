@@ -20,6 +20,7 @@ SSR2079328
 SSR2079329
 
 #then, write sh to download the SRA files:
+#in NCBI SRA, the paired reads were joined in one fastq, therefore, flag --split-files would be used to split reads;
 
 nano download.sh
 
@@ -27,7 +28,7 @@ nano download.sh
 
 for i in $(cat download.txt)
 do
- fastq-dump -A $i
+ fastq-dump --split-files -A $i
 done
 
 
@@ -43,7 +44,14 @@ mkdir 1_fastqc
 
 fastqc ../raw_data/*.fastq -o ./
 
-#two output files were generated for each fastq file;
+#two output files were generated for each fastq file (*_fastqc.html and *_fastqc.zip);
 
 
 
+#2_trimmomatic
+mkdir 2_trimmomatic
+module load trimmomatic
+
+#create sh for trimmomatic to run;
+nano trimmo.sh
+ 
