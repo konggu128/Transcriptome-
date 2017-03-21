@@ -43,6 +43,7 @@ mkdir 1_fastqc
 
 fastqc ../raw_data/*.fastq -o ./
 
+#two output files were generated for each fastq file;
 
 
 
