@@ -109,6 +109,68 @@ done
 
 
 
+############################
+########2.STAR############
+############################
+#Index reference genome
+mkdir alignment_STAR && cd alignment_STAR
+mkdir genomeDir
+
+##--runMode genomeGenerate: run genome indices generation job, default is to run alignment;
+##--genomeDir: specify the directory for storing genome indices
+##--genomeFastaFiles: one or more FASTA files with genome reference sequences
+##--runThreadN: the number of threads to use.
+##--sjdbGTFfile: The annotation file that STAR uses to build splice junctions database
+##--sjdbOverhang: specifies the length of genomic sequence around the annotated junction. Usually it is set to Readlength - 1.
+#get the readlength (result is 100 in this case, therefore sjdbOverhang set to 100-1=99):
+head -2 ../0_raw_data/DRR016140_1.1percent.fastq | awk "{print length}" | tail -2
+head -2 ../0_raw_data/DRR016140_2.1percent.fastq | awk "{print length}" | tail -2
+
+STAR --runMode genomeGenerate \
+    --genomeDir ./genomeDir \
+    --genomeFastaFiles ../0_raw_data/soygenome/*.fa \
+    --runThreadN 2 \
+    --sjdbGTFfile ../0_raw_data/Glycine_max.V1.0.34.gtf \
+    --sjdbOverhang 99
+
+#align the reads:
+#only 4 pairs of reads files (326-329);
+#a for loop can be used to get the job done;
+#in alignment_STAR directory:
+
+mkdir alignment_output          ## create a directory to store the alignment output files
+
+##--genomeDir: specifies the directory where you put your genome indices
+##--readFilesIn: your paired RNASeq reads files.
+##--outFileNamePrefix: your output file name prefix.
+##--outSAMtype: your output file type. Here we want the generated bam file to be sorted by coordination.
+##--runThreadN: the number of threads to be used.
+
+for i in `seq 6 9`
+do
+ STAR --genomeDir ./genomeDir       \
+      --readFilesIn ../2_trimmomatic/SRR32${i}_1.paired.trimmed.fastq ../2_trimmomatic/SRR32${i}_2.paired.trimmed.fastq \
+      --outFileNamePrefix ./alignment_output/SRR32${i}_  \
+      --outSAMtype BAM SortedByCoordinate     \
+      --runThreadN 2
+done
+
+############################
+########3.hisat2############
+############################
+#Index reference genome
+mkdir alignment_hisat2 && cd alignment_hisat2
+mkdir genomeDir
+
+
+
+
+
+
+
+
+
+
 
 
 
