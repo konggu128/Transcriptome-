@@ -196,8 +196,52 @@ do
 done
 
 
+############################
+########4.rapmap############
+############################
+cd ~/RNASeq
+mkdir 4_rapmap && cd 4_rapmap
+mkdir transcriptomeDir
 
+#Index reference genome
+##quasiindex: builds a suffix array-based index
+##t: specifies the path to the reference transcriptome file
+##i: specifies the location where the index should be written
 
+rapmap quasiindex -t ../0_raw_data/Glycine_max.V1.0.cdna.all.fa -i ./transcriptomeDir
 
+#Align the reads
+##quansimap: map reads using the suffix-array based method, should match the method you used for indexing.
+##-1: specifies the first set of reads from a paired library.
+##-2: specifies the second set of reads from a paired library.
+##-t: number of threads to use.
+##-o: path to the file where the output should be written.
 
+mkdir alignment_output
+nano alignment.qsh
+#$ -l mem=7G
+#$ -q medium*
 
+for i in `seq 6 8`
+do
+ rapmap quasimap \
+ -i ./transcriptomeDir \
+ -1 ../0_raw_data/SRR23${i}_1.paired.trimmed.fastq \
+ -2 ../0_raw_data/SRR23${i}_2.paired.trimmed.fastq \
+ -t 2 \
+ -o ./alignment_output/SRR23${i}.sam    
+done
+
+#submit the job:
+qsub alignment.qsh
+
+#generate sorted bam files
+mkdir sorted_bam
+nano sortedbam.sh
+#$ -l mem=6G
+#$ -q medium*
+
+for i in `seq 6 8`
+do 
+ samtools sort ./alignment_output/SRR23${i}.sam -o ./sorted_bam/SRR23${i}_sorted.bam
+done
