@@ -140,6 +140,7 @@ STAR --runMode genomeGenerate \
 
 mkdir alignment_output          ## create a directory to store the alignment output files
 
+##--runMode genomeGenerate: run genome indices generation job, default is to run alignment.
 ##--genomeDir: specifies the directory where you put your genome indices
 ##--readFilesIn: your paired RNASeq reads files.
 ##--outFileNamePrefix: your output file name prefix.
@@ -148,7 +149,7 @@ mkdir alignment_output          ## create a directory to store the alignment out
 
 for i in `seq 6 9`
 do
- STAR --genomeDir ./genomeDir       \
+ STAR --genomeDir ./genomeDir \
       --readFilesIn ../2_trimmomatic/SRR32${i}_1.paired.trimmed.fastq ../2_trimmomatic/SRR32${i}_2.paired.trimmed.fastq \
       --outFileNamePrefix ./alignment_output/SRR32${i}_  \
       --outSAMtype BAM SortedByCoordinate     \
@@ -160,15 +161,39 @@ done
 ############################
 #Index reference genome
 mkdir alignment_hisat2 && cd alignment_hisat2
-mkdir genomeDir
+mkdir genomeDir          ##again, create a directory for the genome indices
 
+##-p: specifies the number of threads to use
+##../0_raw_data/*.fa: path to the reference genome
+##./genomeDir/Athal_index: the base of indices files that will be generated.
 
+hisat2-build -p 2 ../0_raw_data/soygenome/*.fa ./genomeDir/soybean_index
 
+##align the reads:
+##./genomeDir/soybean_index: path to the directory of genome indices
+##-1: specifies the first paired reads file
+##-2: specifies the second paired reads file
+##-S: output to a SAM file. Default is stdout.
+##-p: the number of threads to use.
 
+for i in `seq 6 9`
+do
+ hisat2 ./genomeDir/soybean_index \
+ -1 ../2_trimmomatic/SRR32${i}_1.paired.trimmed.fastq \
+ -2 ../2_trimmomatic/SRR32${i}_2.paired.trimmed.fastq \
+ -S ./alignment_output/SRR32${i}.sam \
+ -p 2
+done
 
+#hisat2 does not generate sorted bam file automatically;
+#use samtools to convert the sam files to sorted bam files;
 
+mkdir sorted_bam
 
-
+for i in `seq 6 9`
+do
+ samtools sort ./alignment_output/SRR32${i}.sam -o ./sorted_bam/SRR32${i}_sorted.bam
+done
 
 
 
