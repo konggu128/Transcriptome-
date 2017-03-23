@@ -39,7 +39,7 @@ do
  fastq-dump --split-files -A $i
 done
 
-
+#####################################################################################################################################
 #1_quality assessment:
 
 qrsh -q medium*
@@ -55,6 +55,7 @@ fastqc ../raw_data/*.fastq -o ./
 #two output files were generated for each fastq file (*_fastqc.html and *_fastqc.zip);
 
 
+#####################################################################################################################################
 #2_trimmomatic
 mkdir 2_trimmomatic
 module load trimmomatic
@@ -76,8 +77,10 @@ SLIDINGWINDOW:4:15 \
 MINLEN:30 \
 >& 329.output
 
+#####################################################################################################################################
 #3_fastqc
 #4_alignment
+
 ############################
 ########1.toptat############
 ############################
@@ -106,8 +109,6 @@ for i `seq 1 20`
 do 
  bowtie2-build ../0_raw_data/soygenome/gma_ref_Glycine_max_v2.0_chr${i}.fa ../0_raw_data/soygenome/gma_ref_Glycine_max_v2.0_chr${i}
 done
-
-
 
 ############################
 ########2.STAR############
@@ -226,10 +227,10 @@ for i in `seq 6 8`
 do
  rapmap quasimap \
  -i ./transcriptomeDir \
- -1 ../0_raw_data/SRR23${i}_1.paired.trimmed.fastq \
- -2 ../0_raw_data/SRR23${i}_2.paired.trimmed.fastq \
+ -1 ../0_raw_data/SRR32${i}_1.paired.trimmed.fastq \
+ -2 ../0_raw_data/SRR32${i}_2.paired.trimmed.fastq \
  -t 2 \
- -o ./alignment_output/SRR23${i}.sam    
+ -o ./alignment_output/SRR32${i}.sam    
 done
 
 #submit the job:
@@ -243,5 +244,75 @@ nano sortedbam.sh
 
 for i in `seq 6 8`
 do 
- samtools sort ./alignment_output/SRR23${i}.sam -o ./sorted_bam/SRR23${i}_sorted.bam
+ samtools sort ./alignment_output/SRR32${i}.sam -o ./sorted_bam/SRR32${i}_sorted.bam
 done
+
+#####################################################################################################################
+#so, 3-4 methods have been used to align the reads into genome/cdna; 
+#BAM files comparisons using samtools flagstat tool;
+#now, we can compare the resutls of these alignment results;
+#for each method, in their corresponding folder:
+
+mkdir flagstat_output
+for i in `seq 6 9`
+do
+   samtools flagstat ./alignment_output/SRR32${i}_sortedBy.bam > ./flagstat_output/SRR32${i}_flagstat.txt
+done
+
+
+#check the flag field of each sam file;
+
+awk '{print $2}' DRR016125.sam | egrep '^[0-9]' | sort -n | uniq
+
+
+cat alignment_STAR/flagstat_output/SRR326_flagstat.txt
+cat alignment_hisat2/flagstat_output/SRR326_flagstat.txt
+cat alignment_rapmap/flagstat_output/SRR326_flagstat.txt
+
+#one output example:
+[Newton:sigma00 RNASeq_lab_I]$ cat alignment_rapmap/flagstat_output/SRR326_flagstat.txt
+335196 + 0 in total (QC-passed reads + QC-failed reads)
+109792 + 0 secondary
+0 + 0 supplementary
+0 + 0 duplicates
+331260 + 0 mapped (98.83% : N/A)
+225404 + 0 paired in sequencing
+112702 + 0 read1
+112702 + 0 read2
+220072 + 0 properly paired (97.63% : N/A)
+220072 + 0 with itself and mate mapped
+2666 + 0 singletons (1.18% : N/A)
+0 + 0 with mate mapped to a different chr
+0 + 0 with mate mapped to a different chr (mapQ>=5)
+
+##QC-passed reads: platform/aligner specific flag.
+##secondary: the same read may have multiple alignments. One of these alignments is considered primary. Others are secondary.
+##supplementary: parts of a reads mapped to different regions (chimeric alignment). One of these aligned regions is representative, others are supplementary.
+##duplicates: PCR duplicates. Read the same sequence multiple times.
+##with itself and mate mapped: both paired reads are mapped.
+##singletons: one of the paired reads is mapped.
+
+##########################################################
+#important stats include:         ########################
+#properly paired                  ########################
+#with itself and mate mapped      ########################
+#secondary                        ########################
+##########################################################
+
+
+
+####################################################################################################################
+#after alignment, count the reads;
+#install htseq
+conda install htseq -y
+conda install pysam -y
+
+
+
+
+
+
+
+
+
+
