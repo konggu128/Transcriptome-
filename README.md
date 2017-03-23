@@ -304,11 +304,62 @@ cat alignment_rapmap/flagstat_output/SRR326_flagstat.txt
 ####################################################################################################################
 #after alignment, count the reads;
 #install htseq
+mkdir 5_reads_count && cd 5_reads_count
 conda install htseq -y
 conda install pysam -y
 
+#create a script file count_reads.sh
+
+#!/bin/bash
+
+## USAGE
+## ./count_reads.sh hisat /path/to/the/sorted_bam_file_directory bam_file_ORDER_TYPE
+## ./count_reads.sh STAR /path/to/the/sorted_bam_file_directory bam_file_ORDER_TYPE
+
+mkdir counts_$1
+
+for sorted_bam_path in $(find $2 -name *.bam)
+do
+    counts_file=$(echo $sorted_bam_path | grep -o "SRR32[6-8]*")_$1_ct
+    echo "The target bam file is: "$sorted_bam_path
+    echo "==================================================="
+    htseq-count -f bam \
+                -t gene \
+                -i gene_id  \
+                -r $3 \
+                $sorted_bam_path \
+                /lustre/projects/qcheng1RNA/0_raw_data/ Glycine_max.V1.0.34.gtf \
+                | \
+                grep -v '^__' > ./counts_$1/$counts_file
+    echo "The count data has been written into: $counts_file"
+    echo "==================================================="
+done
 
 
+#we did need "grep -v '^__'"(-v: select non-matching lines) in the command line, because:
+...
+...
+...
+ATMG01370	0
+ATMG01380	0
+ATMG01390	272
+ATMG01400	0
+ATMG01410	0
+__no_feature	8798
+__ambiguous	4637
+__too_low_aQual	1423
+__not_aligned	2794
+__alignment_not_unique	52464
+
+#count reads from STAR alignment:
+./count_reads.sh STAR /lustre/projects/4_star/alignment_output/ pos
+
+#count reads from hisat2 alignment:
+./count_reads.sh hisat2 /lustre/projects/4_hisat2/alignment_output/ name
+
+#count matrix
+echo gene_ID $(ls SRR* | grep -o "SRR32[6-8]*" | tr "\n" ' ') | tr -s [:blank:] ',' > count_data.csv
+paste $(ls SRR* | sort) | awk '{for(i=3;i<=NF;i+=2) $i=""}{print}' | tr -s [:blank:] ',' >> count_data.csv
 
 
 
