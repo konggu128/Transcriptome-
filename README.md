@@ -1,27 +1,27 @@
 ### Transcriptome/Soybean transcriptome 
-### 1.1 Download soybean reference genome:
+### 0.1 Download soybean reference genome:
 ```{php}
 wget ftp://ftp.ensemblgenomes.org/pub/release-34/plants/fasta/glycine_max/dna/Glycine_max.V1.0.28.dna.chromosome.*.fa.gz
 ```
-### 1.2 Soybean transcriptome:
+### 0.2 Soybean transcriptome:
 ```{php}
 wget ftp://ftp.ensemblgenomes.org/pub/release-34/plants/fasta/glycine_max/cdna/Glycine_max.V1.0.28.cdna.all.fa.gz
 ```
-### 1.3 Soybean genome annotation:
+### 0.3 Soybean genome annotation:
 ```{php}
 wget ftp://ftp.ensemblgenomes.org/pub/release-34/plants/gtf/glycine_max/Glycine_max.V1.0.34.gtf.gz
 ```
-### 1.4 Install sratools for fast download SRA data;
+### 0.4 Install sratools for fast download SRA data;
 ```{php}
 wget "http://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/current/sratoolkit.current-centos_linux64.tar.gz"
 tar -xzf sratoolkit.current-centos_linux64.tar.gz
 ```
-### 1.5 Add the toolkit bin directory into the PATH:
+### 0.5 Add the toolkit bin directory into the PATH:
 ```{php}
 export PATH=/path/to/sratoolkit/bin:$PATH
 ```
-## 1.6 Want to have a loop to download multiple sra files;
-##     Generate a txt file with all the run-names:
+## 0.6 Want to have a loop to download multiple sra files;
+##Generate a txt file with all the run-names:
 ```{php}
 nano download.txt
 SSR2079326
@@ -29,8 +29,8 @@ SSR2079327
 SSR2079328
 SSR2079329
 ```
-## then, write sh to download the SRA files:
-## in NCBI SRA, the paired reads were joined in one fastq, therefore, flag --split-files would be used to split reads;
+##then, write sh to download the SRA files:
+##in NCBI SRA, the paired reads were joined in one fastq, therefore, flag --split-files would be used to split reads;
 ```{php}
 nano download.sh
 for i in $(cat download.txt)
@@ -38,30 +38,31 @@ do
  fastq-dump --split-files -A $i
 done
 ```
-#####################################################################################################################################
-#1_quality assessment:
 
+### 1.0 Quality assessment:
+```{php}
 qrsh -q medium*
 module load fastqc
 mkdir 1_fastqc
-
+```
 #run fastqc:
 #-o:tells fastqc where we want to put output files;
 #'./' means 'here' as in the directory you are running the command from. If we don't do this, fastqc will default to put the output files where the input files are, which happens to be in the raw_data folder in this case;
-
+```{php}
 fastqc ../raw_data/*.fastq -o ./
-
+```
 #two output files were generated for each fastq file (*_fastqc.html and *_fastqc.zip);
 
 
 #####################################################################################################################################
-#2_trimmomatic
+### 2.0 Trimmomatic
+```{php}
 mkdir 2_trimmomatic
 module load trimmomatic
-
+```
 #create sh for trimmomatic to run (take 329 for example);
+```{php}
 nano trimmo.sh
-
 trimmomatic \
 PE \
 -trimlog soyheat329 \
@@ -75,14 +76,12 @@ SRR329_2.unpaired.trimmed.fastq \
 SLIDINGWINDOW:4:15 \
 MINLEN:30 \
 >& 329.output
+```
+### 3.0 Fastqc
+### 4.0 alignment
 
-#####################################################################################################################################
-#3_fastqc
-#4_alignment
+### 4.1 Toptat
 
-############################
-########1.toptat############
-############################
 module load toptat
 module load bowtie2
 
