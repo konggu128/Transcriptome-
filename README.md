@@ -117,12 +117,12 @@ Index reference genome
 mkdir alignment_STAR && cd alignment_STAR
 mkdir genomeDir
 ```
---runMode genomeGenerate: run genome indices generation job, default is to run alignment;
---genomeDir: specify the directory for storing genome indices
---genomeFastaFiles: one or more FASTA files with genome reference sequences
---runThreadN: the number of threads to use.
---sjdbGTFfile: The annotation file that STAR uses to build splice junctions database
---sjdbOverhang: specifies the length of genomic sequence around the annotated junction. Usually it is set to Readlength - 1.
+* --runMode genomeGenerate: run genome indices generation job, default is to run alignment;
+* --genomeDir: specify the directory for storing genome indices
+* --genomeFastaFiles: one or more FASTA files with genome reference sequences
+* --runThreadN: the number of threads to use.
+* --sjdbGTFfile: The annotation file that STAR uses to build splice junctions database
+* --sjdbOverhang: specifies the length of genomic sequence around the annotated junction. Usually it is set to Readlength - 1.
 
 get the readlength (result is 100 in this case, therefore sjdbOverhang set to 100-1=99):
 ```{php}
