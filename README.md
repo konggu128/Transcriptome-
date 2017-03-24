@@ -1,7 +1,7 @@
-# Transcriptome-
+### Transcriptome
 
-#soybean transcriptome 
-#download soybean reference genome:
+### soybean transcriptome 
+### download soybean reference genome:
 ```{php}
 wget ftp://ftp.ensemblgenomes.org/pub/release-34/plants/fasta/glycine_max/dna/Glycine_max.V1.0.28.dna.chromosome.*.fa.gz
 ```
