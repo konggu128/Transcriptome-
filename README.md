@@ -264,7 +264,7 @@ do
  samtools sort ./alignment_output/SRR32${i}.sam -o ./sorted_bam/SRR32${i}_sorted.bam
 done
 ```
-### 4.5 Different alignment methods comparison;
+### 4.5 Different alignment methods comparison
 So, 3-4 methods have been used to align the reads into genome/cdna 
 
 BAM files comparisons using samtools flagstat tool
