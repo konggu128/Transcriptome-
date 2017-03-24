@@ -1,26 +1,27 @@
 ### Transcriptome/Soybean transcriptome 
-### 0.1 Download soybean reference genome
+### 0.0 Data
+0.1 Soybean reference genome
 ```{php}
 wget ftp://ftp.ensemblgenomes.org/pub/release-34/plants/fasta/glycine_max/dna/Glycine_max.V1.0.28.dna.chromosome.*.fa.gz
 ```
-### 0.2 Soybean transcriptome
+0.2 Soybean transcriptome
 ```{php}
 wget ftp://ftp.ensemblgenomes.org/pub/release-34/plants/fasta/glycine_max/cdna/Glycine_max.V1.0.28.cdna.all.fa.gz
 ```
-### 0.3 Soybean genome annotation
+0.3 Soybean genome annotation
 ```{php}
 wget ftp://ftp.ensemblgenomes.org/pub/release-34/plants/gtf/glycine_max/Glycine_max.V1.0.34.gtf.gz
 ```
-### 0.4 Install sratools for fast download SRA data
+0.4 Install sratools for fast download SRA data
 ```{php}
 wget "http://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/current/sratoolkit.current-centos_linux64.tar.gz"
 tar -xzf sratoolkit.current-centos_linux64.tar.gz
 ```
-### 0.5 Add the toolkit bin directory into the PATH
+0.5 Add the toolkit bin directory into the PATH
 ```{php}
 export PATH=/path/to/sratoolkit/bin:$PATH
 ```
-## 0.6 Raw data
+0.6 Raw data
 Want to have a loop to download multiple sra files
 
 Generate a txt file with all the run-names:
