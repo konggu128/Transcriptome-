@@ -21,7 +21,7 @@ tar -xzf sratoolkit.current-centos_linux64.tar.gz
 export PATH=/path/to/sratoolkit/bin:$PATH
 ```
 ## 0.6 Want to have a loop to download multiple sra files;
-##Generate a txt file with all the run-names:
+Generate a txt file with all the run-names:
 ```{php}
 nano download.txt
 SSR2079326
@@ -29,8 +29,8 @@ SSR2079327
 SSR2079328
 SSR2079329
 ```
-##then, write sh to download the SRA files:
-##in NCBI SRA, the paired reads were joined in one fastq, therefore, flag --split-files would be used to split reads;
+then, write sh to download the SRA files:
+in NCBI SRA, the paired reads were joined in one fastq, therefore, flag --split-files would be used to split reads;
 ```{php}
 nano download.sh
 for i in $(cat download.txt)
@@ -45,22 +45,20 @@ qrsh -q medium*
 module load fastqc
 mkdir 1_fastqc
 ```
-#run fastqc:
-#-o:tells fastqc where we want to put output files;
-#'./' means 'here' as in the directory you are running the command from. If we don't do this, fastqc will default to put the output files where the input files are, which happens to be in the raw_data folder in this case;
+run fastqc:
+-o:tells fastqc where we want to put output files;
+'./' means 'here' as in the directory you are running the command from. If we don't do this, fastqc will default to put the output files where the input files are, which happens to be in the raw_data folder in this case;
 ```{php}
 fastqc ../raw_data/*.fastq -o ./
 ```
-#two output files were generated for each fastq file (*_fastqc.html and *_fastqc.zip);
+two output files were generated for each fastq file (*_fastqc.html and *_fastqc.zip);
 
-
-#####################################################################################################################################
 ### 2.0 Trimmomatic
 ```{php}
 mkdir 2_trimmomatic
 module load trimmomatic
 ```
-#create sh for trimmomatic to run (take 329 for example);
+create sh for trimmomatic to run (take 329 for example);
 ```{php}
 nano trimmo.sh
 trimmomatic \
@@ -81,47 +79,53 @@ MINLEN:30 \
 ### 4.0 alignment
 
 ### 4.1 Toptat
-
+```{php}
 module load toptat
 module load bowtie2
-
-#index reference genome first;
-#soybean has lots of chromosomes and therefore has multiple fa files to index;
-#while the input file for bowtie2-build can be single fasta file or zip archive of multiple fasta files;
-#therefore in genome raw folder, zip fa files first;
+```
+index reference genome first;
+soybean has lots of chromosomes and therefore has multiple fa files to index;
+while the input file for bowtie2-build can be single fasta file or zip archive of multiple fasta files;
+therefore in genome raw folder, zip fa files first;
+```{php}
 zip genome.zip *.fa
-
-#build index files:
+```
+build index files:
+```{php}
 bowtie2-build genome.zip genome
-
-#errors were shown up with "empty reference" or "reference only gaps"
-#therefore, combine all the fa files into 1 fa file:
+```
+errors were shown up with "empty reference" or "reference only gaps"
+therefore, combine all the fa files into 1 fa file:
+```{php}
 cat *.fa > genome.fa
 bowtie2-build genome.fa genome
-
-#seems working fine but when run tophat, tophat cannot find the .bt2 index file;
-#error was about cannot find .bt2l file (long-index file);
-#therefore, white a for loop to index these fa files one by one;
+```
+seems working fine but when run tophat, tophat cannot find the .bt2 index file;
+error was about cannot find .bt2l file (long-index file);
+therefore, white a for loop to index these fa files one by one;
+```{php}
 nano index.sh
 for i `seq 1 20`
 do 
  bowtie2-build ../0_raw_data/soygenome/gma_ref_Glycine_max_v2.0_chr${i}.fa ../0_raw_data/soygenome/gma_ref_Glycine_max_v2.0_chr${i}
 done
+```
 
-############################
-########2.STAR############
-############################
-#Index reference genome
+### 4.2 STAR
+Index reference genome
+```{php}
 mkdir alignment_STAR && cd alignment_STAR
 mkdir genomeDir
+```
+--runMode genomeGenerate: run genome indices generation job, default is to run alignment;
+--genomeDir: specify the directory for storing genome indices
+--genomeFastaFiles: one or more FASTA files with genome reference sequences
+--runThreadN: the number of threads to use.
+--sjdbGTFfile: The annotation file that STAR uses to build splice junctions database
+--sjdbOverhang: specifies the length of genomic sequence around the annotated junction. Usually it is set to Readlength - 1.
 
-##--runMode genomeGenerate: run genome indices generation job, default is to run alignment;
-##--genomeDir: specify the directory for storing genome indices
-##--genomeFastaFiles: one or more FASTA files with genome reference sequences
-##--runThreadN: the number of threads to use.
-##--sjdbGTFfile: The annotation file that STAR uses to build splice junctions database
-##--sjdbOverhang: specifies the length of genomic sequence around the annotated junction. Usually it is set to Readlength - 1.
-#get the readlength (result is 100 in this case, therefore sjdbOverhang set to 100-1=99):
+get the readlength (result is 100 in this case, therefore sjdbOverhang set to 100-1=99):
+```{php}
 head -2 ../0_raw_data/DRR016140_1.1percent.fastq | awk "{print length}" | tail -2
 head -2 ../0_raw_data/DRR016140_2.1percent.fastq | awk "{print length}" | tail -2
 
@@ -131,21 +135,23 @@ STAR --runMode genomeGenerate \
     --runThreadN 2 \
     --sjdbGTFfile ../0_raw_data/Glycine_max.V1.0.34.gtf \
     --sjdbOverhang 99
+```
 
-#align the reads:
-#only 4 pairs of reads files (326-329);
-#a for loop can be used to get the job done;
-#in alignment_STAR directory:
-
+align the reads:
+only 4 pairs of reads files (326-329);
+a for loop can be used to get the job done;
+in alignment_STAR directory:
+```{php}
 mkdir alignment_output          ## create a directory to store the alignment output files
+```
+--runMode genomeGenerate: run genome indices generation job, default is to run alignment.
+--genomeDir: specifies the directory where you put your genome indices
+--readFilesIn: your paired RNASeq reads files.
+--outFileNamePrefix: your output file name prefix.
+--outSAMtype: your output file type. Here we want the generated bam file to be sorted by coordination.
+--runThreadN: the number of threads to be used.
 
-##--runMode genomeGenerate: run genome indices generation job, default is to run alignment.
-##--genomeDir: specifies the directory where you put your genome indices
-##--readFilesIn: your paired RNASeq reads files.
-##--outFileNamePrefix: your output file name prefix.
-##--outSAMtype: your output file type. Here we want the generated bam file to be sorted by coordination.
-##--runThreadN: the number of threads to be used.
-
+```{php}
 for i in `seq 6 9`
 do
  STAR --genomeDir ./genomeDir \
@@ -154,27 +160,28 @@ do
       --outSAMtype BAM SortedByCoordinate     \
       --runThreadN 2
 done
+```
 
-############################
-########3.hisat2############
-############################
-#Index reference genome
+#### 4.3 Hisat2
+Index reference genome
+```{php}
 mkdir alignment_hisat2 && cd alignment_hisat2
 mkdir genomeDir          ##again, create a directory for the genome indices
-
-##-p: specifies the number of threads to use
-##../0_raw_data/*.fa: path to the reference genome
-##./genomeDir/Athal_index: the base of indices files that will be generated.
-
+```
+-p: specifies the number of threads to use
+../0_raw_data/*.fa: path to the reference genome
+./genomeDir/Athal_index: the base of indices files that will be generated.
+```{php}
 hisat2-build -p 2 ../0_raw_data/soygenome/*.fa ./genomeDir/soybean_index
+```
+align the reads:
+./genomeDir/soybean_index: path to the directory of genome indices
+-1: specifies the first paired reads file
+-2: specifies the second paired reads file
+-S: output to a SAM file. Default is stdout.
+-p: the number of threads to use.
 
-##align the reads:
-##./genomeDir/soybean_index: path to the directory of genome indices
-##-1: specifies the first paired reads file
-##-2: specifies the second paired reads file
-##-S: output to a SAM file. Default is stdout.
-##-p: the number of threads to use.
-
+```{php}
 for i in `seq 6 9`
 do
  hisat2 ./genomeDir/soybean_index \
@@ -183,39 +190,39 @@ do
  -S ./alignment_output/SRR32${i}.sam \
  -p 2
 done
+```
 
-#hisat2 does not generate sorted bam file automatically;
-#use samtools to convert the sam files to sorted bam files;
-
+hisat2 does not generate sorted bam file automatically;
+use samtools to convert the sam files to sorted bam files;
+```{php}
 mkdir sorted_bam
 
 for i in `seq 6 9`
 do
  samtools sort ./alignment_output/SRR32${i}.sam -o ./sorted_bam/SRR32${i}_sorted.bam
 done
+```
 
-
-############################
-########4.rapmap############
-############################
+### 4.4 Rapmap
+```{php}
 cd ~/RNASeq
 mkdir 4_rapmap && cd 4_rapmap
 mkdir transcriptomeDir
-
-#Index reference genome
-##quasiindex: builds a suffix array-based index
-##t: specifies the path to the reference transcriptome file
-##i: specifies the location where the index should be written
-
+```
+Index reference genome
+quasiindex: builds a suffix array-based index
+t: specifies the path to the reference transcriptome file
+i: specifies the location where the index should be written
+```{php}
 rapmap quasiindex -t ../0_raw_data/Glycine_max.V1.0.cdna.all.fa -i ./transcriptomeDir
-
-#Align the reads
-##quansimap: map reads using the suffix-array based method, should match the method you used for indexing.
-##-1: specifies the first set of reads from a paired library.
-##-2: specifies the second set of reads from a paired library.
-##-t: number of threads to use.
-##-o: path to the file where the output should be written.
-
+```
+Align the reads
+quansimap: map reads using the suffix-array based method, should match the method you used for indexing.
+-1: specifies the first set of reads from a paired library.
+-2: specifies the second set of reads from a paired library.
+-t: number of threads to use.
+-o: path to the file where the output should be written.
+```{php}
 mkdir alignment_output
 nano alignment.qsh
 #$ -l mem=7G
@@ -230,11 +237,13 @@ do
  -t 2 \
  -o ./alignment_output/SRR32${i}.sam    
 done
-
-#submit the job:
+```
+submit the job:
+```{php}
 qsub alignment.qsh
-
-#generate sorted bam files
+```
+generate sorted bam files:
+```{php}
 mkdir sorted_bam
 nano sortedbam.sh
 #$ -l mem=6G
@@ -244,30 +253,29 @@ for i in `seq 6 8`
 do 
  samtools sort ./alignment_output/SRR32${i}.sam -o ./sorted_bam/SRR32${i}_sorted.bam
 done
-
-#####################################################################################################################
-#so, 3-4 methods have been used to align the reads into genome/cdna; 
-#BAM files comparisons using samtools flagstat tool;
-#now, we can compare the resutls of these alignment results;
-#for each method, in their corresponding folder:
-
+```
+### Different alignment methods comparison;
+so, 3-4 methods have been used to align the reads into genome/cdna 
+BAM files comparisons using samtools flagstat tool
+now, we can compare the resutls of these alignment results
+for each method, in their corresponding folder:
+```{php}
 mkdir flagstat_output
 for i in `seq 6 9`
 do
    samtools flagstat ./alignment_output/SRR32${i}_sortedBy.bam > ./flagstat_output/SRR32${i}_flagstat.txt
 done
-
-
-#check the flag field of each sam file;
-
+```
+check the flag field of each sam file;
+```{php}
 awk '{print $2}' DRR016125.sam | egrep '^[0-9]' | sort -n | uniq
-
 
 cat alignment_STAR/flagstat_output/SRR326_flagstat.txt
 cat alignment_hisat2/flagstat_output/SRR326_flagstat.txt
 cat alignment_rapmap/flagstat_output/SRR326_flagstat.txt
-
-#one output example:
+```
+one output example:
+```{php}
 [Newton:sigma00 RNASeq_lab_I]$ cat alignment_rapmap/flagstat_output/SRR326_flagstat.txt
 335196 + 0 in total (QC-passed reads + QC-failed reads)
 109792 + 0 secondary
@@ -282,13 +290,14 @@ cat alignment_rapmap/flagstat_output/SRR326_flagstat.txt
 2666 + 0 singletons (1.18% : N/A)
 0 + 0 with mate mapped to a different chr
 0 + 0 with mate mapped to a different chr (mapQ>=5)
+```
 
-##QC-passed reads: platform/aligner specific flag.
-##secondary: the same read may have multiple alignments. One of these alignments is considered primary. Others are secondary.
-##supplementary: parts of a reads mapped to different regions (chimeric alignment). One of these aligned regions is representative, others are supplementary.
-##duplicates: PCR duplicates. Read the same sequence multiple times.
-##with itself and mate mapped: both paired reads are mapped.
-##singletons: one of the paired reads is mapped.
+*QC-passed reads*: platform/aligner specific flag.
+secondary: the same read may have multiple alignments. One of these alignments is considered primary. Others are secondary.
+supplementary: parts of a reads mapped to different regions (chimeric alignment). One of these aligned regions is representative, others are supplementary.
+duplicates: PCR duplicates. Read the same sequence multiple times.
+with itself and mate mapped: both paired reads are mapped.
+singletons: one of the paired reads is mapped.
 
 ##########################################################
 #important stats include:         ########################
