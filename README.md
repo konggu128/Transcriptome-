@@ -1,27 +1,28 @@
 ### Transcriptome/Soybean transcriptome 
-### 0.1 Download soybean reference genome:
+### 0.1 Download soybean reference genome
 ```{php}
 wget ftp://ftp.ensemblgenomes.org/pub/release-34/plants/fasta/glycine_max/dna/Glycine_max.V1.0.28.dna.chromosome.*.fa.gz
 ```
-### 0.2 Soybean transcriptome:
+### 0.2 Soybean transcriptome
 ```{php}
 wget ftp://ftp.ensemblgenomes.org/pub/release-34/plants/fasta/glycine_max/cdna/Glycine_max.V1.0.28.cdna.all.fa.gz
 ```
-### 0.3 Soybean genome annotation:
+### 0.3 Soybean genome annotation
 ```{php}
 wget ftp://ftp.ensemblgenomes.org/pub/release-34/plants/gtf/glycine_max/Glycine_max.V1.0.34.gtf.gz
 ```
-### 0.4 Install sratools for fast download SRA data;
+### 0.4 Install sratools for fast download SRA data
 ```{php}
 wget "http://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/current/sratoolkit.current-centos_linux64.tar.gz"
 tar -xzf sratoolkit.current-centos_linux64.tar.gz
 ```
-### 0.5 Add the toolkit bin directory into the PATH:
+### 0.5 Add the toolkit bin directory into the PATH
 ```{php}
 export PATH=/path/to/sratoolkit/bin:$PATH
 ```
 ## 0.6 Raw data
-Want to have a loop to download multiple sra files;
+Want to have a loop to download multiple sra files
+
 Generate a txt file with all the run-names:
 ```{php}
 nano download.txt
@@ -30,8 +31,9 @@ SSR2079327
 SSR2079328
 SSR2079329
 ```
-then, write sh to download the SRA files:
-in NCBI SRA, the paired reads were joined in one fastq, therefore, flag --split-files would be used to split reads;
+then, write sh to download the SRA files
+
+In NCBI SRA, the paired reads were joined in one fastq, therefore flag --split-files would be used to split reads
 ```{php}
 nano download.sh
 for i in $(cat download.txt)
@@ -40,26 +42,26 @@ do
 done
 ```
 
-### 1.0 Quality assessment:
+### 1.0 Quality assessment
 ```{php}
 qrsh -q medium*
 module load fastqc
 mkdir 1_fastqc
 ```
-run fastqc:
--o:tells fastqc where we want to put output files;
-'./' means 'here' as in the directory you are running the command from. If we don't do this, fastqc will default to put the output files where the input files are, which happens to be in the raw_data folder in this case;
+run fastqc
+* -o:tells fastqc where we want to put output files;
+* './' means 'here' as in the directory you are running the command from. If we don't do this, fastqc will default to put the output files where the input files are, which happens to be in the raw_data folder in this case;
 ```{php}
 fastqc ../raw_data/*.fastq -o ./
 ```
-two output files were generated for each fastq file (*_fastqc.html and *_fastqc.zip);
+two output files were generated for each fastq file (*_fastqc.html and *_fastqc.zip)
 
 ### 2.0 Trimmomatic
 ```{php}
 mkdir 2_trimmomatic
 module load trimmomatic
 ```
-create sh for trimmomatic to run (take 329 for example);
+create sh for trimmomatic to run (take 329 for example)
 ```{php}
 nano trimmo.sh
 trimmomatic \
@@ -84,26 +86,32 @@ MINLEN:30 \
 module load toptat
 module load bowtie2
 ```
-index reference genome first;
-soybean has lots of chromosomes and therefore has multiple fa files to index;
-while the input file for bowtie2-build can be single fasta file or zip archive of multiple fasta files;
-therefore in genome raw folder, zip fa files first;
+Index reference genome first
+
+Soybean has lots of chromosomes and therefore has multiple fa files to index
+
+While the input file for bowtie2-build can be single fasta file or zip archive of multiple fasta files
+
+Therefore in genome raw folder, zip fa files first
 ```{php}
 zip genome.zip *.fa
 ```
-build index files:
+Build index files:
 ```{php}
 bowtie2-build genome.zip genome
 ```
-errors were shown up with "empty reference" or "reference only gaps"
-therefore, combine all the fa files into 1 fa file:
+Errors were shown up with "empty reference" or "reference only gaps"
+
+Therefore, combine all the fa files into 1 fa file:
 ```{php}
 cat *.fa > genome.fa
 bowtie2-build genome.fa genome
 ```
-seems working fine but when run tophat, tophat cannot find the .bt2 index file;
-error was about cannot find .bt2l file (long-index file);
-therefore, white a for loop to index these fa files one by one;
+Seems working fine but when run tophat, tophat cannot find the .bt2 index file
+
+Error was about cannot find .bt2l file (long-index file)
+
+Ttherefore, white a for loop to index these fa files one by one
 ```{php}
 nano index.sh
 for i `seq 1 20`
@@ -119,7 +127,7 @@ mkdir alignment_STAR && cd alignment_STAR
 mkdir genomeDir
 ```
 
-get the readlength (result is 100 in this case, therefore sjdbOverhang set to 100-1=99):
+Get the readlength (result is 100 in this case, therefore sjdbOverhang set to 100-1=99):
 ```{php}
 head -2 ../0_raw_data/DRR016140_1.1percent.fastq | awk "{print length}" | tail -2
 head -2 ../0_raw_data/DRR016140_2.1percent.fastq | awk "{print length}" | tail -2
@@ -138,10 +146,13 @@ STAR --runMode genomeGenerate \
 * --sjdbGTFfile: The annotation file that STAR uses to build splice junctions database
 * --sjdbOverhang: specifies the length of genomic sequence around the annotated junction. Usually it is set to Readlength - 1.
 
-align the reads:
-only 4 pairs of reads files (326-329);
-a for loop can be used to get the job done;
-in alignment_STAR directory:
+Align the reads:
+
+Only 4 pairs of reads files (326-329);
+
+One for loop can be used to get the job done;
+
+In alignment_STAR directory:
 ```{php}
 mkdir alignment_output          ## create a directory to store the alignment output files
 
@@ -173,7 +184,7 @@ mkdir genomeDir          ##again, create a directory for the genome indices
 ```{php}
 hisat2-build -p 2 ../0_raw_data/soygenome/*.fa ./genomeDir/soybean_index
 ```
-align the reads:
+Align the reads:
 * ./genomeDir/soybean_index: path to the directory of genome indices
 * -1: specifies the first paired reads file
 * -2: specifies the second paired reads file
@@ -190,8 +201,9 @@ do
  -p 2
 done
 ```
-hisat2 does not generate sorted bam file automatically;
-use samtools to convert the sam files to sorted bam files;
+Hisat2 does not generate sorted bam file automatically
+
+Use samtools to convert the sam files to sorted bam files
 ```{php}
 mkdir sorted_bam
 
@@ -215,7 +227,7 @@ rapmap quasiindex -t ../0_raw_data/Glycine_max.V1.0.cdna.all.fa -i ./transcripto
 * t: specifies the path to the reference transcriptome file
 * i: specifies the location where the index should be written
 Align the reads
-quansimap: map reads using the suffix-array based method, should match the method you used for indexing.
+* quansimap: map reads using the suffix-array based method, should match the method you used for indexing.
 * -1: specifies the first set of reads from a paired library.
 * -2: specifies the second set of reads from a paired library.
 * -t: number of threads to use.
@@ -236,11 +248,11 @@ do
  -o ./alignment_output/SRR32${i}.sam    
 done
 ```
-submit the job:
+Submit the job:
 ```{php}
 qsub alignment.qsh
 ```
-generate sorted bam files:
+Generate sorted bam files:
 ```{php}
 mkdir sorted_bam
 nano sortedbam.sh
@@ -253,10 +265,13 @@ do
 done
 ```
 ### 4.5 Different alignment methods comparison;
-so, 3-4 methods have been used to align the reads into genome/cdna 
+So, 3-4 methods have been used to align the reads into genome/cdna 
+
 BAM files comparisons using samtools flagstat tool
-now, we can compare the resutls of these alignment results
-for each method, in their corresponding folder:
+
+Now, we can compare the resutls of these alignment results
+
+For each method, in their corresponding folder:
 ```{php}
 mkdir flagstat_output
 for i in `seq 6 9`
@@ -264,7 +279,7 @@ do
    samtools flagstat ./alignment_output/SRR32${i}_sortedBy.bam > ./flagstat_output/SRR32${i}_flagstat.txt
 done
 ```
-check the flag field of each sam file
+Check the flag field of each sam file
 ```{php}
 awk '{print $2}' DRR016125.sam | egrep '^[0-9]' | sort -n | uniq
 
@@ -272,7 +287,7 @@ cat alignment_STAR/flagstat_output/SRR326_flagstat.txt
 cat alignment_hisat2/flagstat_output/SRR326_flagstat.txt
 cat alignment_rapmap/flagstat_output/SRR326_flagstat.txt
 ```
-one output example:
+One output example:
 ```{php}
 [Newton:sigma00 RNASeq_lab_I]$ cat alignment_rapmap/flagstat_output/SRR326_flagstat.txt
 335196 + 0 in total (QC-passed reads + QC-failed reads)
@@ -299,14 +314,15 @@ one output example:
 * important stats include: properly paired; with itself and mate mapped; secondary                       
 
 ### 5.1 Reads counting
-after alignment, count the reads
-install htseq
+After alignment, count the reads
+
+Install htseq
 ```{php}
 mkdir 5_reads_count && cd 5_reads_count
 conda install htseq -y
 conda install pysam -y
 ```
-create a script file count_reads.sh
+Create a script file count_reads.sh
 ```{php}
 #!/bin/bash
 
@@ -333,7 +349,7 @@ do
     echo "==================================================="
 done
 ```
-we did need "grep -v '^__'"(-v: select non-matching lines) in the command line, because:
+We did need "grep -v '^__'"(-v: select non-matching lines) in the command line, because:
 ```{php}
 ...
 ...
@@ -349,24 +365,26 @@ __too_low_aQual	1423
 __not_aligned	2794
 __alignment_not_unique	52464
 ```
-count reads from STAR alignment:
+Count reads from STAR alignment:
 ```{php}
 ./count_reads.sh STAR /lustre/projects/qcheng1RNA/4_star/alignment_output/ pos
 ```
-count reads from hisat2 alignment:
+Count reads from hisat2 alignment:
 ```{php}
 ./count_reads.sh hisat2 /lustre/projects/qcheng1RNA/4_hisat2/alignment_output/ name
 ```
-count matrix
+Count matrix
 ```{php}
 echo gene_ID $(ls SRR* | grep -o "SRR32[6-8]*" | tr "\n" ' ') | tr -s [:blank:] ',' > count_data.csv
 paste $(ls SRR* | sort) | awk '{for(i=3;i<=NF;i+=2) $i=""}{print}' | tr -s [:blank:] ',' >> count_data.csv
 ```
 
 ### 5.2 Expression analysis
-copy these count_data.csv in local computer;
-in R, analyze the count data with DESeq2 package;
-all the following code would be run in R;
+Copy these count_data.csv in local computer;
+
+In R, analyze the count data with DESeq2 package;
+
+All the following code would be run in R;
 ### 5.2.1 Install DESq2 in R
 ```{R}
 source("https://bioconductor.org/biocLite.R")
@@ -389,7 +407,7 @@ dds = DESeqDataSetFromMatrix(countData = countData,
                              design = ~ phenotype + stress)
 dds
 ```
-delete rows that have 0 for all treatments
+Delete rows that have 0 for all treatments
 ```{R}
 dim(dds)
 dds=dds[rowSums(counts(dds))>1,]
@@ -423,7 +441,7 @@ AT1G01050  12.9203449     0.95553494 0.4842900  1.97306342   0.04848834  0.17696
 * reasons for NA values: By default, independent filtering is performed to select a set of genes for multiple test correction which will optimize the number of adjusted p-values less than a given critical value ‘alpha’ (by default 0.1). The adjusted p-values for the genes which do not pass the filter threshold are set to ‘NA’. By default, the mean of normalized counts is used to perform this filtering, though other statistics can be provided. Several arguments from the ‘filtered_p’ function of genefilter are provided here to control or turn off the independent filtering behavior.
 * By default, ‘results’ assigns a p-value of ‘NA’ to genes containing count outliers, as identified using Cook's distance. See the ‘cooksCutoff’ argument for control of this behavior. Cook's distances for each sample are accessible as a matrix "cooks" stored in the ‘assays()’ list. This measure is useful for identifying rows where the observed counts might not fit to a Negative Binomial distribution.
 
-if we do not want NA, these two arguments can be added
+If we do not want NA, these two arguments can be added
 ```{R}
 results(dds,independentFiltering=FALSE, cooksCutoff=Inf)
 ```
@@ -440,7 +458,7 @@ AT1G01030   0.4918562     0.45730016 1.1722862  0.39009260   0.69646808   1.0000
 AT1G01040   4.1881473    -0.86833117 0.7735613 -1.12251113   0.26164518   0.7854604
 AT1G01050  12.9203449     0.94929113 0.4899696  1.93744912   0.05269047   0.3171373
 ```
-these two results can be compared. Higher pvalue in result1 would be "filtered out", therefore, padj would be NA;
+These two results can be compared. Higher pvalue in result1 would be "filtered out", therefore, padj would be NA;
 
 * By default, the results() function display comparison of the last level of the last variable over the first level of this variable.
 We can extract results of comparisons between other levels:
@@ -463,7 +481,7 @@ par(mfcol=c(1,2))
 plotCounts(dds, gene=mostSigGene, intgroup="stress")
 plotCounts(dds, gene=mostSigGene, intgroup="phenotype")
 ```
-export results (padj less than 0.05) into csv files
+Export results (padj less than 0.05) into csv files
 ```{R}
 orderedRes = res[order(res$padj), ]
 sigOrderedRes = subset(orderedRes, padj < 0.05)
