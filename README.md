@@ -1,18 +1,22 @@
 ### Transcriptome
 
-### soybean transcriptome 
-### download soybean reference genome:
+### Soybean transcriptome 
+### Download soybean reference genome:
 ```{php}
 wget ftp://ftp.ensemblgenomes.org/pub/release-34/plants/fasta/glycine_max/dna/Glycine_max.V1.0.28.dna.chromosome.*.fa.gz
 ```
 #soybean transcriptome:
+```{php}
 wget ftp://ftp.ensemblgenomes.org/pub/release-34/plants/fasta/glycine_max/cdna/Glycine_max.V1.0.28.cdna.all.fa.gz
-
+```
 #soybean genome annotation:
+```{php}
 wget ftp://ftp.ensemblgenomes.org/pub/release-34/plants/gtf/glycine_max/Glycine_max.V1.0.34.gtf.gz
-
+```
 #install sratools for fast download SRA data;
+```{php}
 wget "http://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/current/sratoolkit.current-centos_linux64.tar.gz"
+```
 tar -xzf sratoolkit.current-centos_linux64.tar.gz
 
 #add the toolkit bin directory into the PATH:
