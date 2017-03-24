@@ -5,45 +5,41 @@
 ```{php}
 wget ftp://ftp.ensemblgenomes.org/pub/release-34/plants/fasta/glycine_max/dna/Glycine_max.V1.0.28.dna.chromosome.*.fa.gz
 ```
-#soybean transcriptome:
+### soybean transcriptome:
 ```{php}
 wget ftp://ftp.ensemblgenomes.org/pub/release-34/plants/fasta/glycine_max/cdna/Glycine_max.V1.0.28.cdna.all.fa.gz
 ```
-#soybean genome annotation:
+### soybean genome annotation:
 ```{php}
 wget ftp://ftp.ensemblgenomes.org/pub/release-34/plants/gtf/glycine_max/Glycine_max.V1.0.34.gtf.gz
 ```
-#install sratools for fast download SRA data;
+### install sratools for fast download SRA data;
 ```{php}
 wget "http://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/current/sratoolkit.current-centos_linux64.tar.gz"
-```
 tar -xzf sratoolkit.current-centos_linux64.tar.gz
-
-#add the toolkit bin directory into the PATH:
-
+```
+### add the toolkit bin directory into the PATH:
+```{php}
 export PATH=/path/to/sratoolkit/bin:$PATH
-
-#want to have a loop to download multiple sra files;
-#generate a txt file with all the run-names:
-
+```
+## want to have a loop to download multiple sra files;
+## generate a txt file with all the run-names:
+```{php}
 nano download.txt
 SSR2079326
 SSR2079327
 SSR2079328
 SSR2079329
-
-#then, write sh to download the SRA files:
-#in NCBI SRA, the paired reads were joined in one fastq, therefore, flag --split-files would be used to split reads;
-
+```
+## then, write sh to download the SRA files:
+## in NCBI SRA, the paired reads were joined in one fastq, therefore, flag --split-files would be used to split reads;
+```{php}
 nano download.sh
-
-#in sh, write the loop:
-
 for i in $(cat download.txt)
 do
  fastq-dump --split-files -A $i
 done
-
+```
 #####################################################################################################################################
 #1_quality assessment:
 
