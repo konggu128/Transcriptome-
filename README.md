@@ -20,7 +20,8 @@ tar -xzf sratoolkit.current-centos_linux64.tar.gz
 ```{php}
 export PATH=/path/to/sratoolkit/bin:$PATH
 ```
-## 0.6 Want to have a loop to download multiple sra files;
+## 0.6 Raw data
+Want to have a loop to download multiple sra files;
 Generate a txt file with all the run-names:
 ```{php}
 nano download.txt
@@ -117,12 +118,6 @@ Index reference genome
 mkdir alignment_STAR && cd alignment_STAR
 mkdir genomeDir
 ```
-* --runMode genomeGenerate: run genome indices generation job, default is to run alignment;
-* --genomeDir: specify the directory for storing genome indices
-* --genomeFastaFiles: one or more FASTA files with genome reference sequences
-* --runThreadN: the number of threads to use.
-* --sjdbGTFfile: The annotation file that STAR uses to build splice junctions database
-* --sjdbOverhang: specifies the length of genomic sequence around the annotated junction. Usually it is set to Readlength - 1.
 
 get the readlength (result is 100 in this case, therefore sjdbOverhang set to 100-1=99):
 ```{php}
@@ -136,6 +131,12 @@ STAR --runMode genomeGenerate \
     --sjdbGTFfile ../0_raw_data/Glycine_max.V1.0.34.gtf \
     --sjdbOverhang 99
 ```
+* --runMode genomeGenerate: run genome indices generation job, default is to run alignment;
+* --genomeDir: specify the directory for storing genome indices
+* --genomeFastaFiles: one or more FASTA files with genome reference sequences
+* --runThreadN: the number of threads to use.
+* --sjdbGTFfile: The annotation file that STAR uses to build splice junctions database
+* --sjdbOverhang: specifies the length of genomic sequence around the annotated junction. Usually it is set to Readlength - 1.
 
 align the reads:
 only 4 pairs of reads files (326-329);
@@ -143,15 +144,7 @@ a for loop can be used to get the job done;
 in alignment_STAR directory:
 ```{php}
 mkdir alignment_output          ## create a directory to store the alignment output files
-```
---runMode genomeGenerate: run genome indices generation job, default is to run alignment.
---genomeDir: specifies the directory where you put your genome indices
---readFilesIn: your paired RNASeq reads files.
---outFileNamePrefix: your output file name prefix.
---outSAMtype: your output file type. Here we want the generated bam file to be sorted by coordination.
---runThreadN: the number of threads to be used.
 
-```{php}
 for i in `seq 6 9`
 do
  STAR --genomeDir ./genomeDir \
@@ -161,6 +154,12 @@ do
       --runThreadN 2
 done
 ```
+* --runMode genomeGenerate: run genome indices generation job, default is to run alignment.
+* --genomeDir: specifies the directory where you put your genome indices
+* --readFilesIn: your paired RNASeq reads files.
+* --outFileNamePrefix: your output file name prefix.
+* --outSAMtype: your output file type. Here we want the generated bam file to be sorted by coordination.
+* --runThreadN: the number of threads to be used.
 
 #### 4.3 Hisat2
 Index reference genome
@@ -168,18 +167,18 @@ Index reference genome
 mkdir alignment_hisat2 && cd alignment_hisat2
 mkdir genomeDir          ##again, create a directory for the genome indices
 ```
--p: specifies the number of threads to use
-../0_raw_data/*.fa: path to the reference genome
-./genomeDir/Athal_index: the base of indices files that will be generated.
+* -p: specifies the number of threads to use
+* ../0_raw_data/*.fa: path to the reference genome
+* ./genomeDir/Athal_index: the base of indices files that will be generated.
 ```{php}
 hisat2-build -p 2 ../0_raw_data/soygenome/*.fa ./genomeDir/soybean_index
 ```
 align the reads:
-./genomeDir/soybean_index: path to the directory of genome indices
--1: specifies the first paired reads file
--2: specifies the second paired reads file
--S: output to a SAM file. Default is stdout.
--p: the number of threads to use.
+* ./genomeDir/soybean_index: path to the directory of genome indices
+* -1: specifies the first paired reads file
+* -2: specifies the second paired reads file
+* -S: output to a SAM file. Default is stdout.
+* -p: the number of threads to use.
 
 ```{php}
 for i in `seq 6 9`
@@ -191,7 +190,6 @@ do
  -p 2
 done
 ```
-
 hisat2 does not generate sorted bam file automatically;
 use samtools to convert the sam files to sorted bam files;
 ```{php}
@@ -210,18 +208,18 @@ mkdir 4_rapmap && cd 4_rapmap
 mkdir transcriptomeDir
 ```
 Index reference genome
-quasiindex: builds a suffix array-based index
-t: specifies the path to the reference transcriptome file
-i: specifies the location where the index should be written
 ```{php}
 rapmap quasiindex -t ../0_raw_data/Glycine_max.V1.0.cdna.all.fa -i ./transcriptomeDir
 ```
+* quasiindex: builds a suffix array-based index
+* t: specifies the path to the reference transcriptome file
+* i: specifies the location where the index should be written
 Align the reads
 quansimap: map reads using the suffix-array based method, should match the method you used for indexing.
--1: specifies the first set of reads from a paired library.
--2: specifies the second set of reads from a paired library.
--t: number of threads to use.
--o: path to the file where the output should be written.
+* -1: specifies the first set of reads from a paired library.
+* -2: specifies the second set of reads from a paired library.
+* -t: number of threads to use.
+* -o: path to the file where the output should be written.
 ```{php}
 mkdir alignment_output
 nano alignment.qsh
@@ -254,7 +252,7 @@ do
  samtools sort ./alignment_output/SRR32${i}.sam -o ./sorted_bam/SRR32${i}_sorted.bam
 done
 ```
-### Different alignment methods comparison;
+### 4.5 Different alignment methods comparison;
 so, 3-4 methods have been used to align the reads into genome/cdna 
 BAM files comparisons using samtools flagstat tool
 now, we can compare the resutls of these alignment results
@@ -266,7 +264,7 @@ do
    samtools flagstat ./alignment_output/SRR32${i}_sortedBy.bam > ./flagstat_output/SRR32${i}_flagstat.txt
 done
 ```
-check the flag field of each sam file;
+check the flag field of each sam file
 ```{php}
 awk '{print $2}' DRR016125.sam | egrep '^[0-9]' | sort -n | uniq
 
@@ -292,31 +290,24 @@ one output example:
 0 + 0 with mate mapped to a different chr (mapQ>=5)
 ```
 
-*QC-passed reads*: platform/aligner specific flag.
-secondary: the same read may have multiple alignments. One of these alignments is considered primary. Others are secondary.
-supplementary: parts of a reads mapped to different regions (chimeric alignment). One of these aligned regions is representative, others are supplementary.
-duplicates: PCR duplicates. Read the same sequence multiple times.
-with itself and mate mapped: both paired reads are mapped.
-singletons: one of the paired reads is mapped.
+* QC-passed reads: platform/aligner specific flag.
+* secondary: the same read may have multiple alignments. One of these alignments is considered primary. Others are secondary.
+* supplementary: parts of a reads mapped to different regions (chimeric alignment). One of these aligned regions is representative, others are supplementary.
+* duplicates: PCR duplicates. Read the same sequence multiple times.
+* with itself and mate mapped: both paired reads are mapped.
+* singletons: one of the paired reads is mapped.
+* important stats include: properly paired; with itself and mate mapped; secondary                       
 
-##########################################################
-#important stats include:         ########################
-#properly paired                  ########################
-#with itself and mate mapped      ########################
-#secondary                        ########################
-##########################################################
-
-
-
-####################################################################################################################
-#after alignment, count the reads;
-#install htseq
+### 5.1 Reads counting
+after alignment, count the reads;
+install htseq
+```{php}
 mkdir 5_reads_count && cd 5_reads_count
 conda install htseq -y
 conda install pysam -y
-
+```
 #create a script file count_reads.sh
-
+```{php}
 #!/bin/bash
 
 ## USAGE
@@ -341,9 +332,9 @@ do
     echo "The count data has been written into: $counts_file"
     echo "==================================================="
 done
-
-
-#we did need "grep -v '^__'"(-v: select non-matching lines) in the command line, because:
+```
+we did need "grep -v '^__'"(-v: select non-matching lines) in the command line, because:
+```{php}
 ...
 ...
 ...
@@ -357,26 +348,34 @@ __ambiguous	4637
 __too_low_aQual	1423
 __not_aligned	2794
 __alignment_not_unique	52464
-
-#count reads from STAR alignment:
+```
+count reads from STAR alignment:
+```{php}
 ./count_reads.sh STAR /lustre/projects/qcheng1RNA/4_star/alignment_output/ pos
-
-#count reads from hisat2 alignment:
+```
+count reads from hisat2 alignment:
+```{php}
 ./count_reads.sh hisat2 /lustre/projects/qcheng1RNA/4_hisat2/alignment_output/ name
-
-#count matrix
+```
+count matrix
+```{php}
 echo gene_ID $(ls SRR* | grep -o "SRR32[6-8]*" | tr "\n" ' ') | tr -s [:blank:] ',' > count_data.csv
 paste $(ls SRR* | sort) | awk '{for(i=3;i<=NF;i+=2) $i=""}{print}' | tr -s [:blank:] ',' >> count_data.csv
+```
 
-####################################################################################################################
-#copy these count_data.csv in local computer;
-#in R, analyze the count data with DESeq2 package;
-#all the following code would be run in R;
-
+### 5.2 Expression analysis
+copy these count_data.csv in local computer;
+in R, analyze the count data with DESeq2 package;
+all the following code would be run in R;
+### 5.2.1 Install DESq2 in R
+```{R}
 source("https://bioconductor.org/biocLite.R")
 biocLite("DESeq2")
 install.packages("colorspace")
 library(DESeq2)
+```
+### 5.2.2 Set working directory and load data into R
+```{R}
 setwd("C:/Transcriptome")
 
 countData = read.csv('count_data.csv', header = TRUE, row.names = 1)
@@ -389,19 +388,21 @@ dds = DESeqDataSetFromMatrix(countData = countData,
                              colData = colData,
                              design = ~ phenotype + stress)
 dds
-
-#delete rows that have 0 for all treatments;
+```
+delete rows that have 0 for all treatments
+```{R}
 dim(dds)
 dds=dds[rowSums(counts(dds))>1,]
 dim(dds)
-
-#Differential expression analysis;                            
+```
+### 5.2.3 Differential expression analysis
+```{R}
 dds = DESeq(dds)
 res = results(dds)
 res
-
-#sample results:
-
+```
+Sample results:
+```{R}
 log2 fold change (MAP): stress saline vs ABA 
 Wald test p-value: stress saline vs ABA 
 DataFrame with 19453 rows and 6 columns
@@ -412,20 +413,22 @@ AT1G01020   0.7345512    -0.50228525 1.1997038 -0.41867437   0.67545413         
 AT1G01030   0.4918562     0.53399011 1.2159565  0.43915231   0.66055118         NA
 AT1G01040   4.1881473    -0.88294298 0.7686287 -1.14872497   0.25066941  0.5074783
 AT1G01050  12.9203449     0.95553494 0.4842900  1.97306342   0.04848834  0.1769671
+```
+* baseMean: the average of normalized counts across all samples. This represents the intercept of your GLM.
+* #log2Foldchange: (stress saline vs ABA): log2(treated/untreated). Here it is log2(saline/ABA)
+* lfcSE: standard error of the log2FoldChange estimate
+* stat: statistic for the hypothesis test. For Wald test, it is log2FoldChange/lfcSE.
+* pvalue: the corresponding p-value from Wald test (or likelihood ratio test)
+* padj: adjusted p value due to multiple comparisons.
+* reasons for NA values: By default, independent filtering is performed to select a set of genes for multiple test correction which will optimize the number of adjusted p-values less than a given critical value ‘alpha’ (by default 0.1). The adjusted p-values for the genes which do not pass the filter threshold are set to ‘NA’. By default, the mean of normalized counts is used to perform this filtering, though other statistics can be provided. Several arguments from the ‘filtered_p’ function of genefilter are provided here to control or turn off the independent filtering behavior.
+* By default, ‘results’ assigns a p-value of ‘NA’ to genes containing count outliers, as identified using Cook's distance. See the ‘cooksCutoff’ argument for control of this behavior. Cook's distances for each sample are accessible as a matrix "cooks" stored in the ‘assays()’ list. This measure is useful for identifying rows where the observed counts might not fit to a Negative Binomial distribution.
 
-#baseMean: the average of normalized counts across all samples. This represents the intercept of your GLM.
-#log2Foldchange: (stress saline vs ABA): log2(treated/untreated). Here it is log2(saline/ABA)
-#lfcSE: standard error of the log2FoldChange estimate
-#stat: statistic for the hypothesis test. For Wald test, it is log2FoldChange/lfcSE.
-#pvalue: the corresponding p-value from Wald test (or likelihood ratio test)
-#padj: adjusted p value due to multiple comparisons.
-#reasons for NA values: By default, independent filtering is performed to select a set of genes for multiple test correction which will optimize the number of adjusted p-values less than a given critical value ‘alpha’ (by default 0.1). The adjusted p-values for the genes which do not pass the filter threshold are set to ‘NA’. By default, the mean of normalized counts is used to perform this filtering, though other statistics can be provided. Several arguments from the ‘filtered_p’ function of genefilter are provided here to control or turn off the independent filtering behavior.
-##By default, ‘results’ assigns a p-value of ‘NA’ to genes containing count outliers, as identified using Cook's distance. See the ‘cooksCutoff’ argument for control of this behavior. Cook's distances for each sample are accessible as a matrix "cooks" stored in the ‘assays()’ list. This measure is useful for identifying rows where the observed counts might not fit to a Negative Binomial distribution.
-
-#if we do not want NA, these two arguments can be added:
+if we do not want NA, these two arguments can be added
+```{R}
 results(dds,independentFiltering=FALSE, cooksCutoff=Inf)
-
-#sample result outputs:
+```
+Sample results
+```{R}
 log2 fold change (MAP): stress saline vs ABA 
 Wald test p-value: stress saline vs ABA 
 DataFrame with 19453 rows and 6 columns
@@ -436,52 +439,87 @@ AT1G01020   0.7345512    -0.45421205 1.1660316 -0.38953665   0.69687920   1.0000
 AT1G01030   0.4918562     0.45730016 1.1722862  0.39009260   0.69646808   1.0000000
 AT1G01040   4.1881473    -0.86833117 0.7735613 -1.12251113   0.26164518   0.7854604
 AT1G01050  12.9203449     0.94929113 0.4899696  1.93744912   0.05269047   0.3171373
+```
+these two results can be compared. Higher pvalue in result1 would be "filtered out", therefore, padj would be NA;
 
-#these two results can be compared. Higher pvalue in result1 would be "filtered out", therefore, padj would be NA;
-
-#By default, the results() function display comparison of the last level of the last variable over the first level of this variable.
-#We can extract results of comparisons between other levels:
-
+* By default, the results() function display comparison of the last level of the last variable over the first level of this variable.
+We can extract results of comparisons between other levels:
+```{R}
 results(dds, contrast=c("stress", "mock", "saline"))
 results(dds, contrast=c("phenotype", "ros1-3", "wildtype"))MA
-
-#MA-plot of the results
+```
+MA-plot of the results
+```{R}
 plotMA(res)
-
-#We can select the gene which has the smallest padj value to plot its count at different levels
+```
+We can select the gene which has the smallest padj value to plot its count at different levels
+```{R}
 mostSigGene = rownames(dds)[which.min(res$padj)]
 mostSigGene
 par(mfcol=c(1,2))
 plotCounts(dds, gene=mostSigGene, intgroup="stress")
 plotCounts(dds, gene=mostSigGene, intgroup="phenotype")
-
-#export results (adjusted p value <0.05) into csv files;
+```
+export results (padj less than 0.05) into csv files
+```{R}
 orderedRes = res[order(res$padj), ]
 sigOrderedRes = subset(orderedRes, padj < 0.05)
 write.csv(as.data.frame(sigOrderedRes), "STRESS_saline_vs_ABA.csv")
-
-
-##Likelihood Ratio Test (LRT) method
-#The LRT method compares the full model with the reduced model to see if the removed variable (factor) has significant effect on the fitted model;
-
+```
+### 5.2.4 Likelihood Ratio Test (LRT) method
+The LRT method compares the full model with the reduced model to see if the removed variable (factor) has significant effect on the fitted model
+```{R}
 dds = DESeqDataSetFromMatrix(countData = countData,
                              colData = colData,
                              design = ~ phenotype + stress)
 dds = DESeq(dds, test="LRT", reduced = ~phenotype)
 resLRT = results(dds)
 resLRT
-
-##Wald test vs Likelihood Ratio test
-#How many genes are significant in LRT test?
+```
+### 5.2.5 Wald test vs Likelihood Ratio test
+How many genes are significant in LRT test?
+```{R}
 orderedResLRT = resLRT[order(resLRT$padj), ]
 sigOrderedResLRT = subset(orderedResLRT, padj<0.05)
 dim(sigOrderedResLRT)
-
-#How many genes are significant in Wald test?
+```
+How many genes are significant in Wald test?
+```{R}
 orderedRes = res[order(res$padj), ]
 sigOrderedRes = subset(orderedRes, padj < 0.05)
 dim(sigOrderedRes)
+```
+__Why is the number from LRT much larger than the number from Wald test?__
 
+Let's pick up a gene that is significant in LRT but not in Wald test.
+
+```{R}
+LRTsigGenes = rownames(sigOrderedResLRT)
+Res_genesSigInLRT = res[LRTsigGenes, ]
+notSigWaldGene = rownames(Res_genesSigInLRT)[which.max(Res_genesSigInLRT$padj)]
+notSigWaldGene
+```
+
+padj comparison for the selected gene
+```{R}
+resLRT[notSigWaldGene, ]
+res[notSigWaldGene, ]
+```
+
+Let's plot the counts for this gene
+
+```{R}
+plotCounts(dds, gene=notSigWaldGene, intgroup="stress")
+```
+
+What do you see from the plot?
+
+Let's extract the results of comparisons between __dehydration__ and "ABA".
+
+```{R}
+res2 = results(dds, contrast=c("stress", "dehydration", "ABA"))
+res2[notSigWaldGene, ]
+```
 
 
 
