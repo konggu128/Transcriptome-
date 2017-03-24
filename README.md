@@ -352,14 +352,128 @@ __not_aligned	2794
 __alignment_not_unique	52464
 
 #count reads from STAR alignment:
-./count_reads.sh STAR /lustre/projects/4_star/alignment_output/ pos
+./count_reads.sh STAR /lustre/projects/qcheng1RNA/4_star/alignment_output/ pos
 
 #count reads from hisat2 alignment:
-./count_reads.sh hisat2 /lustre/projects/4_hisat2/alignment_output/ name
+./count_reads.sh hisat2 /lustre/projects/qcheng1RNA/4_hisat2/alignment_output/ name
 
 #count matrix
 echo gene_ID $(ls SRR* | grep -o "SRR32[6-8]*" | tr "\n" ' ') | tr -s [:blank:] ',' > count_data.csv
 paste $(ls SRR* | sort) | awk '{for(i=3;i<=NF;i+=2) $i=""}{print}' | tr -s [:blank:] ',' >> count_data.csv
+
+####################################################################################################################
+#copy these count_data.csv in local computer;
+#in R, analyze the count data with DESeq2 package;
+#all the following code would be run in R;
+
+source("https://bioconductor.org/biocLite.R")
+biocLite("DESeq2")
+install.packages("colorspace")
+library(DESeq2)
+setwd("C:/Transcriptome")
+
+countData = read.csv('count_data.csv', header = TRUE, row.names = 1)
+colData = read.csv("experimental_info.csv", header = TRUE, row.names = 2)[, c("phenotype", "stress")]
+colnames(countData) = paste0(colData$phenotype, '_', colData$stress)
+rownames(colData) = paste0(colData$phenotype, '_', colData$stress)
+
+## construct the data that analyzing functions from DESeq2 can recognize.
+dds = DESeqDataSetFromMatrix(countData = countData,
+                             colData = colData,
+                             design = ~ phenotype + stress)
+dds
+
+#delete rows that have 0 for all treatments;
+dim(dds)
+dds=dds[rowSums(counts(dds))>1,]
+dim(dds)
+
+#Differential expression analysis;                            
+dds = DESeq(dds)
+res = results(dds)
+res
+
+#sample results:
+
+log2 fold change (MAP): stress saline vs ABA 
+Wald test p-value: stress saline vs ABA 
+DataFrame with 19453 rows and 6 columns
+             baseMean log2FoldChange     lfcSE        stat       pvalue       padj
+            <numeric>      <numeric> <numeric>   <numeric>    <numeric>  <numeric>
+AT1G01010   0.9246572     0.04106919 1.1664635  0.03520829   0.97191365         NA
+AT1G01020   0.7345512    -0.50228525 1.1997038 -0.41867437   0.67545413         NA
+AT1G01030   0.4918562     0.53399011 1.2159565  0.43915231   0.66055118         NA
+AT1G01040   4.1881473    -0.88294298 0.7686287 -1.14872497   0.25066941  0.5074783
+AT1G01050  12.9203449     0.95553494 0.4842900  1.97306342   0.04848834  0.1769671
+
+#baseMean: the average of normalized counts across all samples. This represents the intercept of your GLM.
+#log2Foldchange: (stress saline vs ABA): log2(treated/untreated). Here it is log2(saline/ABA)
+#lfcSE: standard error of the log2FoldChange estimate
+#stat: statistic for the hypothesis test. For Wald test, it is log2FoldChange/lfcSE.
+#pvalue: the corresponding p-value from Wald test (or likelihood ratio test)
+#padj: adjusted p value due to multiple comparisons.
+#reasons for NA values: By default, independent filtering is performed to select a set of genes for multiple test correction which will optimize the number of adjusted p-values less than a given critical value ‘alpha’ (by default 0.1). The adjusted p-values for the genes which do not pass the filter threshold are set to ‘NA’. By default, the mean of normalized counts is used to perform this filtering, though other statistics can be provided. Several arguments from the ‘filtered_p’ function of genefilter are provided here to control or turn off the independent filtering behavior.
+##By default, ‘results’ assigns a p-value of ‘NA’ to genes containing count outliers, as identified using Cook's distance. See the ‘cooksCutoff’ argument for control of this behavior. Cook's distances for each sample are accessible as a matrix "cooks" stored in the ‘assays()’ list. This measure is useful for identifying rows where the observed counts might not fit to a Negative Binomial distribution.
+
+#if we do not want NA, these two arguments can be added:
+results(dds,independentFiltering=FALSE, cooksCutoff=Inf)
+
+#sample result outputs:
+log2 fold change (MAP): stress saline vs ABA 
+Wald test p-value: stress saline vs ABA 
+DataFrame with 19453 rows and 6 columns
+             baseMean log2FoldChange     lfcSE        stat       pvalue        padj
+            <numeric>      <numeric> <numeric>   <numeric>    <numeric>   <numeric>
+AT1G01010   0.9246572     0.03501531 1.1418071  0.03066658   0.97553545   1.0000000
+AT1G01020   0.7345512    -0.45421205 1.1660316 -0.38953665   0.69687920   1.0000000
+AT1G01030   0.4918562     0.45730016 1.1722862  0.39009260   0.69646808   1.0000000
+AT1G01040   4.1881473    -0.86833117 0.7735613 -1.12251113   0.26164518   0.7854604
+AT1G01050  12.9203449     0.94929113 0.4899696  1.93744912   0.05269047   0.3171373
+
+#these two results can be compared. Higher pvalue in result1 would be "filtered out", therefore, padj would be NA;
+
+#By default, the results() function display comparison of the last level of the last variable over the first level of this variable.
+#We can extract results of comparisons between other levels:
+
+results(dds, contrast=c("stress", "mock", "saline"))
+results(dds, contrast=c("phenotype", "ros1-3", "wildtype"))MA
+
+#MA-plot of the results
+plotMA(res)
+
+#We can select the gene which has the smallest padj value to plot its count at different levels
+mostSigGene = rownames(dds)[which.min(res$padj)]
+mostSigGene
+par(mfcol=c(1,2))
+plotCounts(dds, gene=mostSigGene, intgroup="stress")
+plotCounts(dds, gene=mostSigGene, intgroup="phenotype")
+
+#export results (adjusted p value <0.05) into csv files;
+orderedRes = res[order(res$padj), ]
+sigOrderedRes = subset(orderedRes, padj < 0.05)
+write.csv(as.data.frame(sigOrderedRes), "STRESS_saline_vs_ABA.csv")
+
+
+##Likelihood Ratio Test (LRT) method
+#The LRT method compares the full model with the reduced model to see if the removed variable (factor) has significant effect on the fitted model;
+
+dds = DESeqDataSetFromMatrix(countData = countData,
+                             colData = colData,
+                             design = ~ phenotype + stress)
+dds = DESeq(dds, test="LRT", reduced = ~phenotype)
+resLRT = results(dds)
+resLRT
+
+##Wald test vs Likelihood Ratio test
+#How many genes are significant in LRT test?
+orderedResLRT = resLRT[order(resLRT$padj), ]
+sigOrderedResLRT = subset(orderedResLRT, padj<0.05)
+dim(sigOrderedResLRT)
+
+#How many genes are significant in Wald test?
+orderedRes = res[order(res$padj), ]
+sigOrderedRes = subset(orderedRes, padj < 0.05)
+dim(sigOrderedRes)
 
 
 
