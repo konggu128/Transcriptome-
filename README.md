@@ -1,29 +1,27 @@
-### Transcriptome
-
-### Soybean transcriptome 
-### Download soybean reference genome:
+### Transcriptome/Soybean transcriptome 
+### 1.1 Download soybean reference genome:
 ```{php}
 wget ftp://ftp.ensemblgenomes.org/pub/release-34/plants/fasta/glycine_max/dna/Glycine_max.V1.0.28.dna.chromosome.*.fa.gz
 ```
-### soybean transcriptome:
+### 1.2 Soybean transcriptome:
 ```{php}
 wget ftp://ftp.ensemblgenomes.org/pub/release-34/plants/fasta/glycine_max/cdna/Glycine_max.V1.0.28.cdna.all.fa.gz
 ```
-### soybean genome annotation:
+### 1.3 Soybean genome annotation:
 ```{php}
 wget ftp://ftp.ensemblgenomes.org/pub/release-34/plants/gtf/glycine_max/Glycine_max.V1.0.34.gtf.gz
 ```
-### install sratools for fast download SRA data;
+### 1.4 Install sratools for fast download SRA data;
 ```{php}
 wget "http://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/current/sratoolkit.current-centos_linux64.tar.gz"
 tar -xzf sratoolkit.current-centos_linux64.tar.gz
 ```
-### add the toolkit bin directory into the PATH:
+### 1.5 Add the toolkit bin directory into the PATH:
 ```{php}
 export PATH=/path/to/sratoolkit/bin:$PATH
 ```
-## want to have a loop to download multiple sra files;
-## generate a txt file with all the run-names:
+## 1.6 Want to have a loop to download multiple sra files;
+##     Generate a txt file with all the run-names:
 ```{php}
 nano download.txt
 SSR2079326
