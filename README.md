@@ -299,14 +299,14 @@ one output example:
 * important stats include: properly paired; with itself and mate mapped; secondary                       
 
 ### 5.1 Reads counting
-after alignment, count the reads;
+after alignment, count the reads
 install htseq
 ```{php}
 mkdir 5_reads_count && cd 5_reads_count
 conda install htseq -y
 conda install pysam -y
 ```
-#create a script file count_reads.sh
+create a script file count_reads.sh
 ```{php}
 #!/bin/bash
 
@@ -452,6 +452,9 @@ MA-plot of the results
 ```{R}
 plotMA(res)
 ```
+
+![plotma](https://cloud.githubusercontent.com/assets/23083944/24308124/36cc327a-109d-11e7-873f-799267d72515.jpeg)
+
 We can select the gene which has the smallest padj value to plot its count at different levels
 ```{R}
 mostSigGene = rownames(dds)[which.min(res$padj)]
@@ -512,7 +515,7 @@ Let's plot the counts for this gene
 plotCounts(dds, gene=notSigWaldGene, intgroup="stress")
 ```
 
-What do you see from the plot?
+![at4g39090](https://cloud.githubusercontent.com/assets/23083944/24307997/a61ff69e-109c-11e7-9b51-180e22876c80.jpeg)
 
 Let's extract the results of comparisons between __dehydration__ and "ABA".
 
