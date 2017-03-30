@@ -21,6 +21,10 @@ tar -xzf sratoolkit.current-centos_linux64.tar.gz
 ```{php}
 export PATH=/path/to/sratoolkit/bin:$PATH
 ```
+in here, the path is:
+```{php}
+export PATH=/data/home/qcheng1/Transcriptome/sratools/sratoolkit.2.8.2-centos_linux64/bin:$PATH
+```
 0.6 Raw data
 Want to have a loop to download multiple sra files
 
